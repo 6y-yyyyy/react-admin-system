@@ -34,7 +34,7 @@ export default function Main() {
             background: colorBgContainer,
             borderRadius: borderRadiusLG,
           }}>
-          Content
+          <Outlet />
         </Content>
       </Layout>
     </Layout>
