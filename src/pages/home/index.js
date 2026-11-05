@@ -21,7 +21,8 @@ export default function Home() {
           </div>
         </Card>
       </Col>
-      <Col span={16}></Col>
+      <Col span={16}>
+      </Col>
     </Row>
   )
 }
