@@ -2,6 +2,7 @@ import React from 'react'
 import MenuConfig from '../../config'
 import * as Icon from '@ant-design/icons';
 import { Button, Layout, Menu, theme } from 'antd';
+import { useNavigate } from 'react-router-dom';
 
 const { Header, Sider, Content } = Layout;
 
@@ -20,17 +21,21 @@ const items = MenuConfig.map((icon) => {
     if (icon.children) {
         child.children = icon.children.map(item => {
             return {
-                    key:item.path,
-                    label:item.label
-                }
+                key: item.path,
+                label: item.label
+            }
         })
     }
     return child
 })
 
-export default function CommonAside({collapsed}) {
-    console.log(collapsed,'commonAside');
-    
+export default function CommonAside({ collapsed }) {
+    const navigate = useNavigate()
+    //点击菜单
+    const selectMenu = (e) => {   /* Menu组件会传入一个包含点击信息的对象，其中key是路径，例如key: '/mall' */
+        navigate(e.key) 
+    }
+
     return (
         <Sider trigger={null} collapsed={collapsed} >
             <h3 className="app-name">{collapsed ? '后台' : '通用后台管理系统'}</h3>
@@ -42,6 +47,7 @@ export default function CommonAside({collapsed}) {
                 style={{
                     height: '100%'
                 }}
+                onClick={selectMenu}
             />
         </Sider>
     )
