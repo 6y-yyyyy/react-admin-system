@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Button, Form, Input, Table, Popconfirm, Modal, InputNumber, Select, DatePicker } from 'antd'
 import './user.css'
-import { getUser, addUser, editUser } from '../../api'
+import { getUser, addUser, editUser, delUser } from '../../api'
 import Title from 'antd/es/skeleton/Title'
 import { render } from '@testing-library/react'
 import { useForm } from 'antd/es/form/Form'
@@ -9,10 +9,6 @@ import { number } from 'echarts'
 import dayjs from 'dayjs'
 
 export default function User() {
-  useEffect(() => {  
-    getTableData()  //页面挂载就调用后端接口获取用户列表数据
-  }, [])
-
   const [listData, setListData] = useState({ name: '' })   // 搜索参数
   const [tableData, setTableData] = useState([])            // 表格数据
   const [modalType, setModalType] = useState(0)             // 0=新增 1=编辑
@@ -35,17 +31,25 @@ export default function User() {
     }
   }
 
-  //提交
+  // 提交搜索：把关键字存进 listData
   const handleFinish = (e) => {
+    // 只更新状态，不直接查数据——查数据交给下面的 useEffect
     setListData({
       name: e.keyword
     })
-    console.log(e);
   }
+  // listData变化后重新查数据（覆盖搜索 + 页面初次加载）
+  // 注意：不能直接在 handleFinish 里调 getTableData，
+  // 因为 setListData 是异步的，此刻 listData 还是旧值，查不到新关键字
+  useEffect(() => {
+    getTableData()
+  }, [listData])
 
   //删除
-  const handleDelete = (rowData) => {
-
+  const handleDelete = ({ id }) => {
+    delUser({ id }).then(() => {   //delUser({ id }) = "调用删除接口，传一个内容为{ id: 当前id值 }的对象过去"
+      getTableData()
+    })
   }
 
   const getTableData = () => {
@@ -74,7 +78,7 @@ export default function User() {
           getTableData()
         })
       }
-    }).catch((err)=>{
+    }).catch((err) => {
       console.log(err);
     })
   }
@@ -149,7 +153,7 @@ export default function User() {
         </Form>
       </div>
 
-      <Table columns={columns} dataSource={tableData} rowKey={'id'} />
+      <Table style={{marginTop:'10px'}} columns={columns} dataSource={tableData} rowKey={'id'} />
       <Modal //弹出一个对话框，里面放着下面的Form表单
         open={isModalOpen}
         title={modalType ? '编辑用户' : '新增用户'}
