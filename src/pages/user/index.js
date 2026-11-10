@@ -1,33 +1,37 @@
 import React, { useEffect, useState } from 'react'
 import { Button, Form, Input, Table, Popconfirm, Modal, InputNumber, Select, DatePicker } from 'antd'
 import './user.css'
-import { getUser } from '../../api'
+import { getUser, addUser, editUser } from '../../api'
 import Title from 'antd/es/skeleton/Title'
 import { render } from '@testing-library/react'
 import { useForm } from 'antd/es/form/Form'
 import { number } from 'echarts'
+import dayjs from 'dayjs'
 
 export default function User() {
-  // 查询条件状态，保存发送给接口的搜索参数。
-  const [listData, setListData] = useState({
-    name: ''
-  })
-  //tableData：表格数据状态，保存接口返回的用户数组。
-  const [tableData, setTableData] = useState([])
-  // 弹窗类型状态：0 表示新增用户，1 表示编辑用户，初始为新增
-  const [modalType, setModalType] = useState(0)
-  //判断弹窗是否打开
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  //创建Form实例
-  const [form] = useForm()
+  useEffect(() => {  
+    getTableData()  //页面挂载就调用后端接口获取用户列表数据
+  }, [])
+
+  const [listData, setListData] = useState({ name: '' })   // 搜索参数
+  const [tableData, setTableData] = useState([])            // 表格数据
+  const [modalType, setModalType] = useState(0)             // 0=新增 1=编辑
+  const [isModalOpen, setIsModalOpen] = useState(false)     // 弹窗开/关
+  const [form] = useForm()                                  // 表单遥控器
 
   //新增/编辑按钮
   const handleClick = (type, rowData) => {
     setIsModalOpen(!isModalOpen)
-    if (type == 'add') {
+    if (type === 'add') {
       setModalType(0)
     } else {
       setModalType(1)
+      //深拷贝，把rowData先转换成JSON字符串然后再转成js数据，这样cloneData和rowData指向的就不是同一个对象
+      const cloneData = JSON.parse(JSON.stringify(rowData))
+      //把后端返回的字符串转成 dayjs 对象
+      cloneData.birth = dayjs(cloneData.birth)
+      //表单数据回填
+      form.setFieldsValue(cloneData)
     }
   }
 
@@ -52,12 +56,34 @@ export default function User() {
 
   //弹窗确定
   const handleOk = () => {
-    setIsModalOpen(false)
+    //表单校验，validateFields()会把表单里所有字段的值收集起来，打包成一个对象返回
+    form.validateFields().then((val) => {
+      //日期参数，把表单里的dayjs对象转成字符串发给后端 这里后端接口要的是 'YYYY-MM-DD'这样的字符串，所以必须.format()
+      //至于这里val.birth为什么是dayjs对象而不是字符串，是因为birth这个字段绑的是<DatePicker>，而 DatePicker的value天生就是dayjs对象
+      val.birth = dayjs(val.birth).format('YYYY-MM-DD')
+      console.log(val.birth, 'newval');
+      //调接口
+      if (modalType) { //编辑
+        editUser(val).then(() => {
+          handleCancel()
+          getTableData()
+        })
+      } else {
+        addUser(val).then(() => {
+          handleCancel()
+          getTableData()
+        })
+      }
+    }).catch((err)=>{
+      console.log(err);
+    })
   }
 
   //弹窗取消
   const handleCancel = () => {
     setIsModalOpen(false)
+    //清空表单内容
+    form.resetFields()
   }
 
   const columns = [
@@ -105,10 +131,6 @@ export default function User() {
     }
   ]
 
-  useEffect(() => {
-    //调用后端接口获取用户列表数据
-    getTableData()
-  }, [])
 
   return (
     <div className='user'>
@@ -126,8 +148,9 @@ export default function User() {
           </Form.Item>
         </Form>
       </div>
+
       <Table columns={columns} dataSource={tableData} rowKey={'id'} />
-      <Modal
+      <Modal //弹出一个对话框，里面放着下面的Form表单
         open={isModalOpen}
         title={modalType ? '编辑用户' : '新增用户'}
         onOk={handleOk}
@@ -142,6 +165,18 @@ export default function User() {
           wrapperCol={{ span: 18 }}
           labelAlign='left'
         >
+
+          {/* 当type是‘编辑’时出现这个隐藏表单来存id值，至于
+          value值是谁填进去的：是调用 form.setFieldsValue(cloneData)时，
+          Form 会拿 cloneData 里的每个键，
+          去和它管理着的每个 Form.Item 的 name 做匹配 */}
+          {
+            modalType === 1 &&
+            <Form.Item name="id" hidden>
+              <Input />
+            </Form.Item>
+          }
+
           <Form.Item
             label='姓名'
             name='name'
