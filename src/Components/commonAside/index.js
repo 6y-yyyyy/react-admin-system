@@ -2,7 +2,9 @@ import React from 'react'
 import MenuConfig from '../../config'
 import * as Icon from '@ant-design/icons';
 import { Button, Layout, Menu, theme } from 'antd';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate} from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { selectMenuList } from '../../store/reducer/tab';
 
 const { Header, Sider, Content } = Layout;
 
@@ -31,9 +33,34 @@ const items = MenuConfig.map((icon) => {
 
 export default function CommonAside({ collapsed }) {
     const navigate = useNavigate()
+    const dispatch = useDispatch()
+    const currentMenu = useSelector(state => state.tab.currentMenu) //读取并订阅 Redux 中的 currentMenu。这个数据变化后，侧栏组件会重新渲染，拿到新的值。
+
+    //添加数据到store
+    const setTabList = (val) => {
+        dispatch(selectMenuList(val)) // selectMenuList(val) ：创建 action，把 val 放进 payload
+    }
     //点击菜单
     const selectMenu = (e) => {   /* Menu组件会传入一个包含点击信息的对象，其中key是路径，例如key: '/mall' */
-        navigate(e.key) 
+        let data
+        MenuConfig.forEach(item => {
+            //找到当前的数据
+            if (item.path === e.keyPath[e.keyPath.length - 1]) {
+                data = item
+                //如果有二级菜单
+                if (e.keyPath.length > 1) {
+                    data = item.children.find(child => {
+                        return child.path === e.key
+                    })
+                }
+            }
+        })
+        setTabList({
+            path: data.path,
+            name: data.name,
+            label: data.label
+        }) //里面这个对象就是39行的val
+        navigate(e.key)
     }
 
     return (
@@ -42,7 +69,7 @@ export default function CommonAside({ collapsed }) {
             <Menu
                 theme="dark"
                 mode="inline"
-                defaultSelectedKeys={['1']}
+                selectedKeys={[currentMenu.path]}
                 items={items}
                 style={{
                     height: '100%'

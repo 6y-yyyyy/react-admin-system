@@ -5,9 +5,10 @@ import {
   UserOutlined,
   VideoCameraOutlined,
 } from '@ant-design/icons';
-import { Button, Layout, Menu, theme } from 'antd';
+import { Button, Layout, Menu, Tag, theme } from 'antd';
 import CommonAside from '../Components/commonAside';
 import CommonHeader from '../Components/commonHeader';
+import CommonTag from '../Components/commonTag';
 import { useSelector } from 'react-redux';
 
 const { Header, Sider, Content } = Layout;
@@ -26,6 +27,7 @@ export default function Main() {
       <CommonAside collapsed={collapsed} />
       <Layout>
         <CommonHeader collapsed={collapsed} />
+        <CommonTag />
         <Content
           style={{
             margin: '24px 16px',
