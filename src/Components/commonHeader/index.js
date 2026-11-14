@@ -4,13 +4,17 @@ import { MenuFoldOutlined } from '@ant-design/icons'
 import './index.css'
 import { useDispatch } from 'react-redux';
 import {collapseMenu} from '../../store/reducer/tab'
+import { useNavigate } from 'react-router-dom';
 
 const { Header, Sider, Content } = Layout;
 
 export default function CommonHeader({ collapsed }) {
+    const navigate = useNavigate()
     //登出
     const logout = () => {
-
+        //清楚token
+        localStorage.removeItem('token')
+        navigate('/login')
     }
 
     const items = [
@@ -25,7 +29,7 @@ export default function CommonHeader({ collapsed }) {
         {
             key: '2',
             label: (
-                <a onClick={() => logout} target="_blank" rel="noopener noreferrer">
+                <a onClick={() => logout()} target="_blank" rel="noopener noreferrer">
                     退出
                 </a>
             ),
